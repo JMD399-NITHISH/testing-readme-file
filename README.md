@@ -20,129 +20,17 @@ All operations are fully automated and metadata-driven.
 ---
 
 # 🧩 Column-by-Column Definition
+| Column Name      | Description                                                                                                                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user_name`      | Email ID of the user to be added or removed from the Azure AD group. Membership is controlled using effective dates.                                                                      |
+| `adgrp_name`     | Azure AD Security Group name. If the group does not exist, it will be created. If it exists, users will be added or removed accordingly. All permissions are granted only via this group. |
+| `description`    | Description of the AD group. Used only when creating a new group. Ignored if the group already exists.                                                                                    |
+| `owners`         | Owner(s) of the AD group. Applied only when the group is newly created. Multiple owners must be separated by commas.                                                                      |
+| `effective_from` | Start date from which the user should be part of the AD group. If the current date falls within the range, the user is added.                                                             |
+| `effective_to`   | End date for group membership. If the current date exceeds this date, the user is removed automatically. Used for lifecycle-based access control.                                         |
+| `workspace_name` | *(Optional)* Fabric workspace where the AD group should be assigned. If blank, no workspace assignment is performed.                                                                      |
+| `role`           | *(Optional)* Workspace role (`Viewer`, `Contributor`, `Member`, `Admin`). Applied only if `workspace_name` is provided.                                                                   |
 
----
-
-## 🔹 Column A – `user_name`
-
-Specifies the **user email address**.
-
-Example:
-
-```
-nithish.y@jmangroup.com
-```
-
-This user will be:
-
-- Added to the AD group (if within effective date)
-- Removed from the AD group (if expired)
-
----
-
-## 🔹 Column B – `adgrp_name`
-
-Specifies the **Azure AD Security Group name**.
-
-### Behavior:
-
-- If the group does NOT exist → it will be created.
-- If the group already exists → members will be added/removed accordingly.
-- Users are never granted direct permissions — only via AD groups.
-
----
-
-## 🔹 Column C – `description`
-
-Specifies the description for the AD group.
-
-### Behavior:
-
-- Used only when the AD group is newly created.
-- If the group already exists → this value is ignored.
-- Helps document business purpose of the group.
-
-Example:
-
-```
-Finance SQL readers from north region
-```
-
----
-
-## 🔹 Column D – `owners`
-
-Specifies the AD group owners.
-
-### Rules:
-
-- Only applied when the group is newly created.
-- Ignored if group already exists.
-- Multiple owners must be separated by commas
-
-Owners are assigned as Entra ID group owners.
-
----
-
-## 🔹 Column E – `effective_from`
-
-Start date for user membership in the AD group.
-
-- If current date ≥ `effective_from`
-- And current date ≤ `effective_to`
-→ User will be added to the group.
-
----
-
-## 🔹 Column F – `effective_to`
-
-End date for user membership in the AD group.
-
-If:
-
-```
-current_date > effective_to
-```
-
-→ User will be automatically removed from the AD group.
-
-### Revocation Process:
-
-To revoke a user:
-1. Update `effective_to` to yesterday’s date.
-2. Run the pipeline.
-3. User will be removed from the AD group automatically.
-
----
-
-## 🔹 Column G – `workspace_name` (Optional)
-
-Specifies the Fabric workspace where the AD group should be assigned.
-
-### Behavior:
-
-- If value is provided → group will be added to workspace.
-- If blank → no workspace-level assignment will occur.
-
----
-
-## 🔹 Column H – `role` (Optional)
-
-Specifies the workspace role.
-
-Allowed values:
-
-```
-Viewer
-Contributor
-Member
-Admin
-```
-
-### Behavior:
-
-- Only applied if `workspace_name` is specified.
-- If workspace is blank → this column is ignored.
 
 ---
 
@@ -167,7 +55,7 @@ For each row:
 
 | user_name | adgrp_name | workspace_name | role |
 |------------|------------|----------------|------|
-| kavin.n@jmangroup.com | sg_dm_fbw_uk_north | ws-fabric-sandbox | Viewer |
+| nithish.y@jmangroup.com | sg_dm_fbw_uk_north | ws-fabric-sandbox | Viewer |
 
 Result:
 
@@ -217,186 +105,19 @@ All access provisioning is handled through a metadata-driven Notebook.
 
 # 🧩 Metadata Column Definitions
 
----
-
-## 🔹 Column A – `ad_group_name`
-
-Specifies the **Azure AD Security Group**.
-
-- Users are added to this AD group in the `user_group_management` stage of the pipeline.
-- All OLS and RLS permissions are applied **only to this AD group**.
-- No direct user-level permissions are granted.
-- Serves as the central security identity.
-
----
-
-## 🔹 Column B – `workspace_name`
-
-Specifies the Fabric workspace.
-
-The pipeline uses this value to:
-- Locate the target artifact
-- Apply permissions within the correct workspace
-
----
-
-## 🔹 Column C – `artifact_type`
-
-Allowed values:
-
-```
-Warehouse
-Lakehouse
-```
-
-### Behavior
-
-| Artifact Type | OLS | RLS |
-|---------------|-----|-----|
-| Lakehouse     | ✅ Yes | ❌ No |
-| Warehouse     | ✅ Yes | ✅ Yes |
-
-- Lakehouse → Only Object-Level Security
-- Warehouse → Object-Level + Row-Level Security
-
----
-
-## 🔹 Column D – `object_type`
-
-Allowed values:
-
-```
-table
-schema
-file
-```
-
-### 1️⃣ `table`
-- Works for Warehouse & Lakehouse
-- Format required:
-  ```
-  schema.table_name
-  ```
-
-### 2️⃣ `schema`
-- Works for Warehouse & Lakehouse
-- Format:
-  ```
-  schema_name
-  ```
-
-### 3️⃣ `file`
-- Only supported for **Lakehouse**
-- Applies file/folder-level security
-- Example:
-  ```
-  Customer Tool - Final/Input
-  ```
-
----
-
-## 🔹 Column E – `artifact_name`
-
-Specifies the target Lakehouse or Warehouse name.
-
-Examples:
-
-```
-lh_core
-dwh_report
-```
-
----
-
-## 🔹 Column F – `object_path`
-
-Specifies object location depending on object type.
-
-### If `schema`
-```
-dbo
-```
-
-### If `table`
-```
-dbo.fact_invoice
-```
-
-### If `file`
-```
-Customer Tool - Final/Input
-```
-
----
-
-## 🔹 Column G – `access_level`
-
-Allowed values:
-
-```
-Read
-ReadWrite
-```
-
-### Permission Mapping
-
-| Access Level | Permissions |
-|--------------|------------|
-| Read         | SELECT |
-| ReadWrite    | SELECT, INSERT, UPDATE, DELETE |
-
----
-
-## 🔹 Column H – `rls_level`
-
-Applicable only when:
-
-- `artifact_type = Warehouse`
-- `object_type = table`
-
-Specifies the column used for Row-Level Security.
-
-Example:
-```
-region
-source
-```
-
----
-
-## 🔹 Column I – `rls_data`
-
-Specifies the filter value for RLS.
-
-Example:
-
-| rls_level | rls_data |
-|-----------|----------|
-| region    | UK North |
-| source    | sap |
-
-If blank → No RLS applied.
-
----
-
-## 🔹 Column J – `effective_from`
-
-Date when the permission becomes active.
-
----
-
-## 🔹 Column K – `effective_to`
-
-Date until which permission remains valid.
-
-### Revoking Access
-
-To revoke access:
-1. Update `effective_to` to yesterday’s date.
-2. Run the Notebook.
-3. Permissions will be revoked automatically.
-
-⚠️ Date-based revocation currently implemented for Warehouse.
+| Column Name      | Description                                                                                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ad_group_name`  | Azure AD Security Group to which Object-Level Security (OLS) and Row-Level Security (RLS) permissions are applied. Users are managed separately through the User Group metadata.        |
+| `workspace_name` | Fabric workspace where the target artifact (Lakehouse or Warehouse) exists. Used to locate and apply permissions.                                                                       |
+| `artifact_type`  | Type of artifact. Allowed values: `Lakehouse` or `Warehouse`. Lakehouse supports OLS only. Warehouse supports both OLS and RLS.                                                         |
+| `object_type`    | Security level of the object. Allowed values: `schema`, `table`, `file`. File-level security applies only to Lakehouse. Schema and table apply to both Lakehouse and Warehouse.         |
+| `artifact_name`  | Name of the Lakehouse or Warehouse where access must be applied (e.g., `lh_core`, `dwh_report`).                                                                                        |
+| `object_path`    | Target object location. For schema-level → specify schema name. For table-level → specify `schema.table_name`. For file-level → specify folder path inside the Lakehouse Files section. |
+| `access_level`   | Permission level. Allowed values: `Read` (SELECT) or `ReadWrite` (SELECT, INSERT, UPDATE, DELETE).                                                                                      |
+| `rls_level`      | *(Warehouse only, table-level only)* Column name on which Row-Level Security filter should be applied (e.g., `region`, `source`).                                                       |
+| `rls_data`       | *(Warehouse only)* Value used in RLS filtering. Users in the group will see only rows matching this value. Leave blank if RLS is not required.                                          |
+| `effective_from` | Date from which the permission becomes active for the AD group.                                                                                                                         |
+| `effective_to`   | Date until which permission remains valid. To revoke access, set this date to a past date and re-run the notebook.                                                                      |
 
 ---
 
