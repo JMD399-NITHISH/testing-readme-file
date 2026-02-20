@@ -258,4 +258,100 @@ The Service Principal must be added to the Fabric workspace.
 - Tenant ID
 - Workspace ID
 - Lakehouse name
+- 
+## OneLake Security (Required for OLS in SQL Endpoint)
 
+To ensure Object Level Security (OLS) reflects correctly in the SQL Analytics Endpoint, the following configuration is mandatory:
+
+### Enable OneLake Security for Tables
+
+Before creating any custom SQL roles for OLS:
+
+1. Navigate to the **SQL Analytics Endpoint**
+2. Open **Data access mode (Preview)**
+3. Select:
+
+   ✅ **Use OneLake security for tables (User’s identity access mode)**
+
+4. Click **Apply**
+
+---
+
+### Important Notes
+
+- This setting must be enabled **before creating SQL roles**
+- OLS will not reflect in the SQL endpoint if this option is not enabled
+- The user's identity will be used to access table data
+- Table permissions will be controlled via **OneLake security**
+- Views, Stored Procedures, and Functions will continue to use **SQL security**
+
+---
+
+### Required Permissions
+
+To change this setting:
+
+- The user must have **Admin role** in the Fabric workspace
+- Only Workspace Admins can modify the Data Access Mode
+
+
+⚠️ If this setting is not enabled prior to role creation, security synchronization errors may occur and OLS may not function as expected.
+
+---
+
+## ⚠️ Known Limitations & Considerations
+
+This implements metadata-driven RBAC for Fabric Lakehouse and Warehouse. However, there are certain platform-level limitations and behavioral constraints to be aware of.
+
+---
+
+### 🔹 1️⃣ Lakehouse Does Not Support Native RLS
+
+- **Lakehouse supports Object-Level Security (OLS) only int his release.**
+- **Row-Level Security (RLS) is not supported in Lakehouse.**
+
+---
+
+### 🔹 2️⃣ SQL Endpoint Metadata Refresh Issue (Lakehouse)
+
+When applying OLS roles via API:
+- ✅ Role creation works
+- ✅ Members are added correctly
+- ✅ Permissions reflect in Lakehouse view
+- ❌ **But SQL Analytics Endpoint may not immediately recognize role membership**
+
+#### Observed Behavior
+Even after adding all members to a role:
+- SQL endpoint sometimes does not refresh security metadata
+- Users cannot query tables immediately
+
+#### Workaround Used
+To force SQL endpoint metadata refresh:
+1. Add a temporary (dummy) member to the role
+2. Remove the dummy member
+3. This triggers a metadata refresh in the SQL endpoint
+4. Permissions then work as expected
+
+**Impact:**
+- Additional operational step required
+- May introduce slight automation complexity
+
+---
+
+### 🔹 3️⃣ Effective-Date Revocation Applies Per Execution
+
+- Access revocation depends on pipeline execution
+- If pipeline is not run, expired permissions remain active
+- No real-time revocation without execution
+
+**Impact:**  
+Operational discipline required to run pipeline regularly.
+
+---
+
+## 🧠 Architectural Considerations
+
+- **Azure AD Group-based model** ensures centralized identity management
+- **Metadata-driven approach** improves governance
+- However, Fabric SQL endpoint security relies on internal synchronization mechanisms
+- Certain behaviors (like dummy member refresh) are platform-dependent and may change in future updates
