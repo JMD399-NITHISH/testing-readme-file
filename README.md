@@ -53,15 +53,22 @@ For each row:
 
 # 🏗 Example Scenario
 
-| user_name | adgrp_name | workspace_name | role |
-|------------|------------|----------------|------|
-| nithish.y@jmangroup.com | sg_dm_fbw_uk_north | ws-fabric-sandbox | Viewer |
+| user_name                   | adgrp_name           | description                                                                 | owners                      | effective_from | effective_to | workspace_name      | role   |
+|-----------------------------|----------------------|-----------------------------------------------------------------------------|-----------------------------|----------------|--------------|---------------------|--------|
+| nithish.y@jmangroup.com     | sg_dm_fbw_uk_north   | Members of UK north Region  | fabric.admin@jmangroup.com  | 2026-02-01     |  2027-09-17            | ws-fabric-sandbox   | Viewer |
+
 
 Result:
 
-- User added to `sg_dm_fbw_uk_north`
-- Group assigned to workspace `ws-fabric-sandbox`
-- Role granted as Viewer
+User nithish.y@jmangroup.com is added to the Azure AD group sg_dm_fbw_uk_north
+
+The AD group sg_dm_fbw_uk_north is assigned to the Fabric workspace ws-fabric-sandbox
+
+The group is granted the Viewer role in the workspace
+
+fabric.admin@jmangroup.com is configured as the group owner
+
+Access is effective from 2026-02-01
 
 ---
 
@@ -198,3 +205,81 @@ Users can access only that folder inside the Lakehouse.
 Users can access all tables under schema `ip_data`.
 
 ---
+
+🔧 Prerequisites
+1️⃣ Azure AD App Registration (Service Principal)
+
+An Azure AD Application (Service Principal) must be created and configured with the required API permissions.
+
+✅ Microsoft Graph – Application Permissions
+
+The following Application permissions must be granted with Admin Consent:
+
+Directory.ReadWrite.All – Read and write directory data
+
+Group.Create – Create security groups
+
+Group.ReadWrite.All – Read and write all groups
+
+GroupMember.ReadWrite.All – Manage group memberships
+
+RoleManagement.ReadWrite.Directory – Manage directory RBAC settings
+
+User.Read.All – Read all users’ full profiles
+
+⚠️ Admin consent is mandatory for these permissions.
+
+✅ Power BI / Fabric – Delegated Permissions
+
+The Service Principal must also have the following Fabric / Power BI API permissions:
+
+Workspace.ReadWrite.All
+
+Lakehouse.ReadWrite.All
+
+Lakehouse.Execute.All
+
+Warehouse.Execute.All
+
+Dataset.ReadWrite.All
+
+Report.ReadWrite.All
+
+SQLendpoint.Read.All
+
+OneLake.ReadWrite.All
+
+Item.ReadWrite.All
+
+Item.Execute.All
+
+Capacity.Read.All
+
+Capacity.ReadWrite.All
+
+StorageAccount.ReadWrite.All
+
+UserState.ReadWrite.All
+
+Code.AccessFabric.All
+
+Ensure all required permissions show “Granted for <Tenant Name>”.
+
+2️⃣ Fabric Workspace Requirements
+
+The Service Principal must be added to the Fabric workspace.
+
+It must have Admin or Contributor role (depending on required operations).
+
+3️⃣ Environment Variables / Secrets
+
+Client ID
+
+Client Secret (stored securely in Key Vault or Fabric secrets)
+
+Tenant ID
+
+Workspace ID
+
+Lakehouse name
+
