@@ -355,3 +355,199 @@ Operational discipline required to run pipeline regularly.
 - **Metadata-driven approach** improves governance
 - However, Fabric SQL endpoint security relies on internal synchronization mechanisms
 - Certain behaviors (like dummy member refresh) are platform-dependent and may change in future updates
+---
+
+# Row-Level Security (RLS) – Implementation Guide
+
+**Scope:** Semantic Model Security Configuration
+**Applies To:** Microsoft Fabric Semantic Models and reports 
+
+---
+
+## Overview
+
+This document explains how to configure **Row-Level Security (RLS)** using **metadata-driven logic** and the `nb_object_level_security` notebook.
+
+The RLS implementation dynamically generates a security mapping table and applies it to the Semantic Model using relationships and role assignments.
+
+---
+
+# Step 1: Update Metadata with Access Details
+
+Before running the notebook, update the security metadata with appropriate access mappings.
+
+### What to update:
+
+* User / Group Identifier
+* Entity / Business Key
+* Access Level 
+* Any filtering attributes used in the fact/dimension tables
+
+⚠️ Ensure:
+
+* No duplicate or conflicting access entries
+* All required keys match the keys used in the semantic model
+* Email IDs are accurate
+
+This metadata drives the entire RLS logic.
+
+---
+
+# Step 2: Run the Security Notebook
+
+Run the notebook:
+
+```
+nb_object_level_security
+```
+
+### What this notebook does:
+
+* Reads the metadata
+* Processes access mappings
+* Generates a security table:
+
+```
+security.rls_metadata
+```
+
+### Output:
+
+A table created under:
+
+```
+Schema: security  
+Table: rls_metadata
+```
+
+This table will contain:
+
+* User Identifier (email)
+* Security Key(s)
+
+---
+
+# Step 3: Add the RLS Table to the Semantic Model
+
+1. Open the Semantic Model.
+2. Add the table:
+
+```
+security.rls_metadata
+```
+
+3. Create relationships based on your model design.
+
+---
+
+# Step 4: Configure Relationships
+
+You must create **one of the following relationships**:
+
+### Option A – Many-to-Many (Fact-Level Filtering)
+
+Connect:
+
+```
+security.rls_metadata  ⇄  Final Fact Table
+```
+
+Use this when:
+
+* Security keys directly filter the fact table.
+* Multiple access rows per user are expected.
+
+---
+
+### Option B – Many-to-One (Dimension-Level Filtering)
+
+Connect:
+
+```
+security.rls_metadata  →  Dimension Table
+```
+
+Then ensure:
+
+* The Dimension table is already related to the Fact table.
+* Filter direction allows propagation to the Fact table.
+
+Use this when:
+
+* Security is dimension-driven.
+* Cleaner star schema enforcement is preferred.
+
+---
+
+# Step 5: Create Roles in Semantic Model
+
+1. Open the Semantic Model.
+2. Go to **Manage Roles**.
+3. Create a new role (e.g., `Dynamic_RLS`).
+
+### Apply Filter on:
+
+```
+security.rls_metadata
+```
+
+Use:
+
+```
+[User] = USERPRINCIPALNAME()
+```
+
+This ensures the logged-in user only sees their mapped data.
+
+---
+
+# Step 6: Assign Users to Roles
+
+1. Go to **Manage Roles**
+2. Add:
+
+   * Users
+   * Security Groups
+3. Assign them to the created role.
+
+---
+
+# Validation Checklist
+
+- Metadata updated
+- Notebook executed successfully
+- `security.rls_metadata` table created
+- Relationship configured correctly
+- Role created with USERPRINCIPALNAME() filter
+- Users assigned to role
+- Tested using “View As Role”
+
+---
+
+# Architecture Flow
+
+```
+Metadata → Notebook → security.rls_metadata → Semantic Model Relationship → Role → User Access
+```
+
+---
+
+# Important Notes
+
+* Always re-run the notebook after metadata changes.
+* If access issues occur, validate:
+
+  * Relationship cardinality
+  * Cross-filter direction
+  * UPN format
+* Many-to-One via Dimension is recommended for clean modeling.
+* Many-to-Many should be used only when necessary.
+
+---
+
+# Reference
+
+[Microsoft Fabric row-level security documentation](https://learn.microsoft.com/en-us/fabric/security/service-admin-row-level-security)
+
+
+
