@@ -337,6 +337,10 @@ To force SQL endpoint metadata refresh:
 - May introduce slight automation complexity
 
 ---
+# Limitations
+
+[SQL Analytics Endpoint OneLake Security - Limitations](https://learn.microsoft.com/en-us/fabric/onelake/security/sql-analytics-endpoint-onelake-security#:~:text=queries%20may%20fail.-,Limitations,-Applies%20only%20to)
+---
 
 ### 🔹 3️⃣ Effective-Date Revocation Applies Per Execution
 
@@ -355,6 +359,7 @@ Operational discipline required to run pipeline regularly.
 - **Metadata-driven approach** improves governance
 - However, Fabric SQL endpoint security relies on internal synchronization mechanisms
 - Certain behaviors (like dummy member refresh) are platform-dependent and may change in future updates
+- 
 ---
 
 # Row-Level Security (RLS) – Implementation Guide
@@ -548,6 +553,4 @@ Metadata → Notebook → security.rls_metadata → Semantic Model Relationship 
 # Reference
 
 [Microsoft Fabric row-level security documentation](https://learn.microsoft.com/en-us/fabric/security/service-admin-row-level-security)
-
-
 
