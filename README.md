@@ -332,14 +332,13 @@ To force SQL endpoint metadata refresh:
 3. This triggers a metadata refresh in the SQL endpoint
 4. Permissions then work as expected
 
+# Limitations - [SQL Analytics Endpoint OneLake Security - Limitations](https://learn.microsoft.com/en-us/fabric/onelake/security/sql-analytics-endpoint-onelake-security#:~:text=queries%20may%20fail.-,Limitations,-Applies%20only%20to)
+---
+
 **Impact:**
 - Additional operational step required
 - May introduce slight automation complexity
 
----
-# Limitations
-
-[SQL Analytics Endpoint OneLake Security - Limitations](https://learn.microsoft.com/en-us/fabric/onelake/security/sql-analytics-endpoint-onelake-security#:~:text=queries%20may%20fail.-,Limitations,-Applies%20only%20to)
 ---
 
 ### 🔹 3️⃣ Effective-Date Revocation Applies Per Execution
